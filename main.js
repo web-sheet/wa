@@ -57,7 +57,9 @@ client.on('message_create', message => {
         .then(response => response.json())
         .then(data => {
             if (data.response) {
-                client.sendMessage(message.from, data.response);
+                    // Replace escaped new line characters with actual new lines for display
+            const formattedResponse = data.response.replace(/\\n/g, "\n");
+            client.sendMessage(message.from, formattedResponse);
             } else {
                 client.sendMessage(message.from, 'Hello, how can I assist you?');
             }
