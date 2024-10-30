@@ -31,10 +31,36 @@ client.on('message_create', message => {
         return; 
     }
 
-    console.log(message.body);
-    const messageBody = message.body;
+    // Check if the message is a location message
+    if (message.type === 'location') {
+        const latitude = message.location.latitude;
+        const longitude = message.location.longitude;
 
-    // Send the message to Google Sheets
+        console.log(`Received location: Latitude: ${latitude}, Longitude: ${longitude}`);
+
+        // Send location data to Google Apps Script
+        fetch('https://script.google.com/macros/s/AKfycbyFzI3fywUiQ11gzDuJAIdwU2VaofG9BYf4CS14-n_5jZcKEzqjr4jp_hZiObVRoHm1/exec', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ latitude, longitude }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Location saved to Google Sheets:', data);
+        })
+        .catch((error) => {
+            console.error('Error saving location:', error);
+        });
+
+        return; // Exit after processing location
+    }
+
+    // Handle regular text messages
+    const messageBody = message.body;
+    console.log(messageBody);
+    
     fetch('https://script.google.com/macros/s/AKfycbyFzI3fywUiQ11gzDuJAIdwU2VaofG9BYf4CS14-n_5jZcKEzqjr4jp_hZiObVRoHm1/exec', {
         method: 'POST',
         headers: {
@@ -52,12 +78,12 @@ client.on('message_create', message => {
 
     const msgBody = message.body.toLowerCase();
 
-    // Fetch response from Google Apps Script
     fetch('https://script.google.com/macros/s/AKfycbyFzI3fywUiQ11gzDuJAIdwU2VaofG9BYf4CS14-n_5jZcKEzqjr4jp_hZiObVRoHm1/exec?query=' + encodeURIComponent(msgBody))
         .then(response => response.json())
         .then(data => {
             if (data.response) {
-                client.sendMessage(message.from, data.response);
+                const formattedResponse = data.response.replace(/\\n/g, "\n");
+                client.sendMessage(message.from, formattedResponse);
             } else {
                 client.sendMessage(message.from, 'Hello, how can I assist you?');
             }
@@ -69,3 +95,4 @@ client.on('message_create', message => {
 });
 
 client.initialize();
+
