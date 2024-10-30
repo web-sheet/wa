@@ -26,7 +26,6 @@ client.on('qr', qr => {
     qrcode.generate(qr, {small: true});
 });
 
-// New endpoint to send messages
 client.on('message_create', message => {   
     if (message.from === client.info.wid._serialized) {
         return; 
@@ -35,7 +34,7 @@ client.on('message_create', message => {
     console.log(message.body);
     const messageBody = message.body;
 
-    // Existing functionality to save messages to Google Sheets
+    // Send the message to Google Sheets
     fetch('https://script.google.com/macros/s/AKfycbyFzI3fywUiQ11gzDuJAIdwU2VaofG9BYf4CS14-n_5jZcKEzqjr4jp_hZiObVRoHm1/exec', {
         method: 'POST',
         headers: {
@@ -51,15 +50,14 @@ client.on('message_create', message => {
         console.error('Error saving message:', error);
     });
 
-    // Existing functionality to respond to messages
     const msgBody = message.body.toLowerCase();
+
+    // Fetch response from Google Apps Script
     fetch('https://script.google.com/macros/s/AKfycbyFzI3fywUiQ11gzDuJAIdwU2VaofG9BYf4CS14-n_5jZcKEzqjr4jp_hZiObVRoHm1/exec?query=' + encodeURIComponent(msgBody))
         .then(response => response.json())
         .then(data => {
             if (data.response) {
-                    // Replace escaped new line characters with actual new lines for display
-            const formattedResponse = data.response.replace(/\\n/g, "\n");
-            client.sendMessage(message.from, formattedResponse);
+                client.sendMessage(message.from, data.response);
             } else {
                 client.sendMessage(message.from, 'Hello, how can I assist you?');
             }
@@ -69,15 +67,5 @@ client.on('message_create', message => {
             client.sendMessage(message.from, 'Sorry, I could not process your request.');
         });
 });
-
-// New function to send messages based on cell clicks
-async function sendMessageToNumber(number, message) {
-    try {
-        await client.sendMessage(number, message);
-        console.log(`Message sent to ${number}: ${message}`);
-    } catch (error) {
-        console.error(`Failed to send message to ${number}:`, error);
-    }
-}
 
 client.initialize();
